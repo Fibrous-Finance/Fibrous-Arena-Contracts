@@ -1,0 +1,8 @@
+[package]
+name = "FibrousArena"
+version = "0.1.0"
+
+[[target.starknet-contract]]
+
+[dependencies]
+starknet = ">=1.1.0"
