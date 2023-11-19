@@ -15,6 +15,7 @@ trait IERC721<TContractState> {
     fn totalSupply(self: @TContractState) -> u256;
     fn ownerOf(self: @TContractState, token_id: u256) -> ContractAddress;
     fn getApproved(self: @TContractState, token_id: u256) -> ContractAddress;
+    fn owner(self: @TContractState) -> ContractAddress;
 
     fn setApprovalForAll(ref self: TContractState, operator: ContractAddress, approved: bool);
     fn approve(ref self: TContractState, to: ContractAddress, token_id: u256);
@@ -24,7 +25,9 @@ trait IERC721<TContractState> {
     fn mint(ref self: TContractState, addresses: Array<ContractAddress>);
 
     fn setTokenUri(ref self: TContractState, uri: Array<felt252>);
-    fn upgrade(ref self: TContractState, new_hash: ClassHash);
+    fn transferOwnership(ref self: TContractState, new_owner: ContractAddress);
+    fn burn(ref self: TContractState, token_id: u256);
+    fn upgrade(ref self: TContractState, new_implementation: ClassHash);
 }
 
 #[starknet::contract]
@@ -141,6 +144,10 @@ mod ERC721 {
             self._get_approved(token_id)
         }
 
+        fn owner(self: @ContractState) -> ContractAddress {
+            self.contract_owner.read()
+        }
+
         fn transferFrom(
             ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256
         ) {
@@ -191,9 +198,19 @@ mod ERC721 {
             self._set_token_uri(uri);
         }
 
-        fn upgrade(ref self: ContractState, new_hash: ClassHash) {
+        fn transferOwnership(ref self: ContractState, new_owner: ContractAddress) {
             assert(get_caller_address() == self.contract_owner.read(), 'UNAUTHORIZED_OWNER');
-            replace_class_syscall(new_hash);
+            self.contract_owner.write(new_owner);
+        }
+
+        fn burn(ref self: ContractState, token_id: u256) {
+            assert(get_caller_address() == self._owner_of(token_id), 'UNAUTHORIZED_OWNER');
+            self._burn(token_id);
+        }
+
+        fn upgrade(ref self: ContractState, new_implementation: ClassHash) {
+            assert(get_caller_address() == self.contract_owner.read(), 'UNAUTHORIZED_OWNER');
+            replace_class_syscall(new_implementation);
         }
     }
 
