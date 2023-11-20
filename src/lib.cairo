@@ -15,6 +15,7 @@ trait IERC721<TContractState> {
     fn totalSupply(self: @TContractState) -> u256;
     fn ownerOf(self: @TContractState, token_id: u256) -> ContractAddress;
     fn getApproved(self: @TContractState, token_id: u256) -> ContractAddress;
+    fn baseUri(self: @TContractState) -> Array<felt252>;
     fn owner(self: @TContractState) -> ContractAddress;
 
     fn setApprovalForAll(ref self: TContractState, operator: ContractAddress, approved: bool);
@@ -127,7 +128,6 @@ mod ERC721 {
 
         fn tokenUri(self: @ContractState, token_id: u256) -> Array<felt252> {
             self._require_minted(token_id);
-            let base_uri = self.base_uri_len.read();
             let mut uri = self._token_uri();
             uri.append(token_id.try_into().unwrap());
             uri.append(self.uri_extension.read());
@@ -142,6 +142,10 @@ mod ERC721 {
 
         fn getApproved(self: @ContractState, token_id: u256) -> ContractAddress {
             self._get_approved(token_id)
+        }
+
+        fn baseUri(self: @ContractState) -> Array<felt252> {
+            self._token_uri()
         }
 
         fn owner(self: @ContractState) -> ContractAddress {
